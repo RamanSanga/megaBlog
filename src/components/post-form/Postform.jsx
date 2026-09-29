@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Button, Input, RTE, Select } from "..";
 import appwriteService from "../../appwrite/conf";
@@ -8,10 +8,10 @@ import { useSelector } from "react-redux";
 export default function PostForm({ post }) {
     const { register, handleSubmit, watch, setValue, control, getValues } = useForm({
         defaultValues: {
-            title: post?.title || "",
-            slug: post?.$id || "",
-            content: post?.content || "",
-            status: post?.status || "active",
+            title: post?.title ?? "",
+            slug: post?.$id ?? "",
+            content: post?.content ?? "",
+            status: post?.status ?? "active",
         },
     });
 
@@ -19,35 +19,49 @@ export default function PostForm({ post }) {
     const userData = useSelector((state) => state.auth.userData);
 
     const submit = async (data) => {
-        if (post) {
-            const file = data.image && data.image[0] ? await appwriteService.uploadFile(data.image[0]) : null;
+        try {
+            let fileId = post?.featuredImage || post?.fileId || "";
+            let uploadedFile = null;
 
-            if (file) {
-                await appwriteService.deleteFile(post.featuredImage);
+            // If a new image is uploaded
+            if (data.image && data.image[0]) {
+                uploadedFile = await appwriteService.uploadFile(data.image[0]);
+                if (!uploadedFile?.$id) {
+                    throw new Error("Image upload failed");
+                }
+
+                // Delete old image if updating
+                if (post?.featuredImage) {
+                    await appwriteService.deleteFile(post.featuredImage);
+                }
+                fileId = uploadedFile.$id;
             }
 
-            const dbPost = await appwriteService.updatePost(post.$id, {
-                ...data,
-                featuredImage: file ? file.$id : post.featuredImage,
-                fileId: file ? file.$id : post.fileId, // Pass fileId for schema
-            });
-
-            if (dbPost) {
-                navigate(`/post/${dbPost.$id}`);
-            }
-        } else {
-            const file = data.image && data.image[0] ? await appwriteService.uploadFile(data.image[0]) : null;
-
-            if (file) {
-                const fileId = file.$id;
-                data.featuredImage = fileId;
-                data.fileId = fileId; // Pass fileId for schema
-                const dbPost = await appwriteService.createPost({ ...data, userId: userData.$id });
-
+            if (post) {
+                // Update existing post
+                const dbPost = await appwriteService.updatePost(post.$id, {
+                    ...data,
+                    featuredImage: fileId,
+                    fileId: fileId,
+                    userId: userData?.$id,
+                });
+                if (dbPost) {
+                    navigate(`/post/${dbPost.$id}`);
+                }
+            } else {
+                // Create new post
+                const dbPost = await appwriteService.createPost({
+                    ...data,
+                    featuredImage: fileId,
+                    fileId: fileId,
+                    userId: userData?.$id,
+                });
                 if (dbPost) {
                     navigate(`/post/${dbPost.$id}`);
                 }
             }
+        } catch (error) {
+            console.log("PostForm submit error:", error);
         }
     };
 
@@ -58,17 +72,15 @@ export default function PostForm({ post }) {
                 .toLowerCase()
                 .replace(/[^a-zA-Z\d\s]+/g, "-")
                 .replace(/\s/g, "-");
-
         return "";
     }, []);
 
-    React.useEffect(() => {
+    useEffect(() => {
         const subscription = watch((value, { name }) => {
             if (name === "title") {
                 setValue("slug", slugTransform(value.title), { shouldValidate: true });
             }
         });
-
         return () => subscription.unsubscribe();
     }, [watch, slugTransform, setValue]);
 
@@ -100,10 +112,10 @@ export default function PostForm({ post }) {
                     accept="image/png, image/jpg, image/jpeg, image/gif"
                     {...register("image", { required: !post })}
                 />
-                {post && (
+                {post && (post.featuredImage || post.fileId) && (
                     <div className="w-full mb-4">
                         <img
-                            src={appwriteService.getFilePreview(post.featuredImage)}
+                            src={appwriteService.getFilePreview(post.featuredImage || post.fileId)}
                             alt={post.title}
                             className="rounded-lg"
                         />
@@ -116,23 +128,16 @@ export default function PostForm({ post }) {
                     {...register("status", { required: true })}
                 />
                 <Button
-            type="submit"
-            className="w-full"
-            bgColor={post ? "bg-green-500" : "bg-blue-600"}
-          >
-            {post ? "Update Post" : "Publish Post"}
-          </Button>
+                    type="submit"
+                    className="w-full"
+                    bgColor={post ? "bg-green-500" : "bg-blue-600"}
+                >
+                    {post ? "Update Post" : "Publish Post"}
+                </Button>
             </div>
         </form>
     );
 }
-
-
-
-
-
-
-
 
 
 

@@ -10,7 +10,7 @@ function Home() {
         {/* Text Section */}
         <section className="text-gray-800 text-center md:text-left md:w-1/2">
           <h1 className="text-5xl font-bold mb-4 leading-tight">
-            Welcome to <span className="text-blue-600">RS Blog</span>
+            Welcome to <span className="text-blue-600">Vedang Blogs</span>
           </h1>
           <p className="text-lg mb-4 text-gray-600">
             A digital diary of taste, travel, and unforgettable moments.

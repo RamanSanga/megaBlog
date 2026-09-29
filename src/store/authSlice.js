@@ -1,7 +1,7 @@
 import {createSlice} from '@reduxjs/toolkit'
 
 const initialState = {
-    status : true,  //If true then it means it is logged in
+    status : false,  //If true then it means it is logged in
     userData : false
 }
 
@@ -13,7 +13,7 @@ const authSlice = createSlice({
             state.status = true;
             state.userData = action.payload.userData;
         },
-        logout : (state , action)=>{
+        logout : (state)=>{
             state.status = false;
             state.userData = null;
         }

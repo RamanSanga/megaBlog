@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, PostCard } from '../components';
 import appwriteService from "../appwrite/conf";
-import featuredImage from '../components/Images/posts.png'; // Make sure path is correct
+import featuredImage from '../components/Images/posts.png';
 
 function AllPosts() {
     const [posts, setPosts] = useState([]);
@@ -10,13 +10,14 @@ function AllPosts() {
     useEffect(() => {
         appwriteService.getPosts([]).then((result) => {
             if (result) {
+                console.log("Fetched Posts:", result.documents); // Debug fetched posts
                 setPosts(result.documents);
             }
             setLoading(false);
         });
     }, []);
 
-    const firstSixPosts = posts.slice(0, 6);
+    const firstSixPosts = posts;
 
     return (
         <div className="w-full py-12 bg-white min-h-screen">

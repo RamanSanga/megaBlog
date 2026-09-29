@@ -24,18 +24,13 @@ export class AuthService {
             }
         }
         catch (error) {
-            alert("This account already exist")
-            return null;
+            console.error("Appwrite Service :: createAccount :: error ", error)
+            throw error;
         }
     }
 
     async login({ email, password }) {
-        try {
-            return await this.account.createEmailPasswordSession(email , password);
-        }
-        catch (error) {
-            throw error;
-        }
+        return await this.account.createEmailPasswordSession(email , password);
     }
 
     async  getCurrentUser() {
@@ -43,7 +38,7 @@ export class AuthService {
         const user = await this.account.get(); // will throw 401 if not logged in
         return user;
     } catch (error) {
-        console.error("Appwrite Service :: getCurrentUser ::error");
+        console.error("Appwrite Service :: getCurrentUser ::error", error);
         return null; // important to return null if unauthorized
     }
    };
@@ -53,7 +48,7 @@ export class AuthService {
             await this.account.deleteSessions();
         }
         catch (error) {
-            console.log("Appwrite Service :: getCurrentUser ::error ", error)
+            console.error("Appwrite Service :: logout :: error ", error)
         }
     }
 
